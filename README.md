@@ -13,34 +13,6 @@ A **Material Design** desktop application for calculating CPU/GPU/Motherboard bo
 
 ---
 
-## How to Build the .exe
-
-### Prerequisites
-- Windows 10/11
-- Python 3.10 or later → https://www.python.org/downloads/
-- Check "Add to PATH" during install
-
-### Steps
-1. Open this folder in File Explorer
-2. Double-click **`build.bat`**
-3. Wait ~60 seconds
-4. Your `.exe` will appear in **`dist\BottleneckCalculator.exe`**
-
-> The exe is self-contained (~15 MB). No Python required to run it.
-
----
-
-## GitHub Auto-Update Setup
-
-1. Create a GitHub repository
-2. Open `bottleneck_calculator.py` and edit line 14:
-   ```python
-   GITHUB_REPO = "YOUR_USERNAME/BottleneckCalculator"
-   ```
-3. Create a GitHub Release tagged `v1.0.1` (or higher) to trigger the update banner.
-
----
-
 ## Bottleneck Calculation Method
 
 The engine combines four weighted factors:

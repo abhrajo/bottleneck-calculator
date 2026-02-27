@@ -13,10 +13,11 @@ import threading
 import webbrowser
 from dataclasses import dataclass
 
-GITHUB_REPO   = "YOUR_USERNAME/BottleneckCalculator"
+GITHUB_REPO   = "abhrajo/bottleneck-calculator"
 CURRENT_VER   = "3.0.0"
-RELEASES_URL  = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-DOWNLOAD_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"
+RELEASE_TAG   = "BC_Main"
+RELEASES_URL  = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{RELEASE_TAG}"
+DOWNLOAD_PAGE = f"https://github.com/{GITHUB_REPO}/releases/tag/{RELEASE_TAG}"
 
 # ─────────────────────────── THEMES ──────────────────────────────────────────
 THEMES = {
@@ -579,13 +580,33 @@ def calculate_bottleneck(cpu: CPU, gpu: GPU, mb: Motherboard):
 
 # ──────────────────────────── UPDATE CHECK ───────────────────────────────────
 def check_update():
+    """
+    Check GitHub for newer releases.
+    Checks /releases/latest first, then the known BC_Main tag for assets.
+    """
     try:
         import urllib.request, json as _j
+
+        # Primary: check for any newer versioned release
+        latest_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+        try:
+            with urllib.request.urlopen(latest_url, timeout=5) as r:
+                data = _j.loads(r.read())
+            tag = data.get("tag_name", "")
+            if tag and tag != RELEASE_TAG:
+                return tag, data.get("html_url", DOWNLOAD_PAGE)
+        except Exception:
+            pass
+
+        # Fallback: named BC_Main release — check for downloadable assets
         with urllib.request.urlopen(RELEASES_URL, timeout=5) as r:
             data = _j.loads(r.read())
-        latest = data.get("tag_name","").lstrip("v")
-        if latest and latest != CURRENT_VER:
-            return latest, data.get("html_url", DOWNLOAD_PAGE)
+        tag      = data.get("tag_name", "")
+        html_url = data.get("html_url", DOWNLOAD_PAGE)
+        assets   = data.get("assets", [])
+        if assets and tag:
+            return tag, html_url
+
     except Exception:
         pass
     return None, None
@@ -1069,14 +1090,15 @@ class BottleneckApp(tk.Tk):
 
     # ── UPDATE ────────────────────────────────────────────────────────────────
     def _update_check(self):
-        latest, url = check_update()
-        if latest:
-            self.update_lbl.configure(
-                text=f"🔔  Update v{latest} available — click to download",
-                fg=T["accent"], cursor="hand2")
-            self.update_lbl.bind("<Button-1>", lambda e: webbrowser.open(url))
+        tag, url = check_update()
+        if tag:
+            label = f"🔔  Release [{tag}] available — click to download"
+            self.update_lbl.configure(text=label, fg=T["accent"], cursor="hand2")
+            self.update_lbl.bind("<Button-1>", lambda e: webbrowser.open(url or DOWNLOAD_PAGE))
         else:
-            self.update_lbl.configure(text="✔  Up to date", fg=T["success"])
+            self.update_lbl.configure(
+                text=f"✔  Up to date  •  {GITHUB_REPO}",
+                fg=T["success"])
 
     # ── HELPERS ───────────────────────────────────────────────────────────────
     def _card(self, parent):
